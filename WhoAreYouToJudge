@@ -1,0 +1,863 @@
+import processing.serial.*;
+import processing.sound.*;
+
+PFont font;
+
+char ardValue;
+int NUM_OF_VALUES = 10;  /** YOU MUST CHANGE THIS ACCORDING TO YOUR PROJECT **/
+long startTime;
+long desiredDuration = 30;
+long qTime = 0;
+boolean countdown = false;
+float ansTrue = 0;
+float ansFalse = 0;
+
+int question = 1;
+boolean gameOver;
+
+
+Serial myPort;
+
+String myString;
+SoundFile typewriter;
+SoundFile radar;
+SoundFile music;
+SoundFile correct;
+SoundFile incorrect;
+
+
+//questions
+String q1 = "This is the 'Who are you to Judge' Project. \nThis is a simulation game to test your knowledge about the U.S Criminal Justice System. Read each scenario and decide what you believe is the correct sentencing. \nSubmit answers by using the gavel to hit the corresponding sides. \nHit the left pad for the first choice, and the right pad for the second choice. \nYou will have 10 seconds after the text is displayed to make a decision. \n\n(Hit the Right Pad to continue) ";
+String q2 = "A police officer sees a man being assaulted and tries to intervene. \nThe police officer is supposedly shot by the assaulter. \nThere are several eye witness testimonies saying that the assaulter shot the cop, but there is no DNA evidence. What's your judgement? \n\nHit the left side for guilty and right side for innocent.";
+String q3 = "The defendant, an 18-year-old high school senior, walked into a school and began to shoot innocent classmates with an automatic assault rifle. \nBy the time police apprehended the defendant, 4 of the defendant’s classmates were killed, and 12 were injured. He was tried as an adult and found guilty of premeditated murder. What's your verdict? \n\nHit the left side for Death sentence and hit the right side for Life Sentence.";
+String q4 = "Lee and Pitts were charged for the death of two white men, although no physical evidence linked them to the deaths of them. However, there were eyewitnesses who gave their testimony on the case, and Lee and Pitts pleaded guilty. \nLater on, the eyewitness recanted her accusations. Would you convict them? \n\nHit the left side for YES and the right side for NO.";
+String q5 = "On the night of April 19, 1989, Trisha Meili, a 28-year-old white woman was attacked and raped by 8 people in Central Park. \nPolice suspected that a group of Black and Hispanic teenagers raped Meili, although no DNA evidence was found. \nHowever, the group of teenagers confessed to the crime. Would you convict them? \n\nHit the left side for YES and the right side for NO.";
+String q6 = "Richardson was charged for the poisoning of his child. \nThe prosecution argued that Richardson committed the crime to obtain insurance money, although this policy didn’t exist. \nThe primary witnesses against Richardson were two jail-house snitches whom Richardson was said to have confessed to. Do you think Richardson is guilty? \n\nHit the left side for innocent and right side for guilty.";
+String q7 = "Bloodsworth was charged for the rape and murder of a young girl. \nThere were several eyewitnesses that claimed that Bloodsworth murdered and raped the girl. \nHowever, Bloodsworth had alibi witnesses. Would you convict him? \n\nHit the left side for YES and the right side for NO.";
+String q8 = "One night, Sabrina Butler’s 9-month old son had a heart murmur and stopped breathing. \nThe police found many bruises on the son’s body and arrested Butler for child abuse. \nShe was interrogated by the police and then prosecuted. Do you think she should be prosecuted? \n\nHit the left side for NO and the right side for YES.";
+String q9 = "Rodney Alcala was prosecuted for raping and killing five women in California between the years 1977 to 1979. \nIn addition, he compiled a collection of more than 1,000 photographs of women and teenage boys, many in sexually explicit poses. What is your verdict? \n\nHit the left side for Death Sentence and the right side for Life Sentence.";
+String q10 = "A Broward County jury convicted groom Hayes of the rape and strangling death of fellow groom Albertson. \nProsecutors introduced DNA evidence that they said linked him to the homicide. \nHowever, Hayes’ lawyers presented expert testimony suggesting the DNA results were contaminated. Would you convict him? \n\nHit the left side for YES and the right side for NO.";
+String q11 = "Congratulations! You have made it to the end of the game. We hope you learned more about the U.S Criminal Justice System. We designed this game this way to see how people form judgements in a limited time manner. We hope you didn’t let your preconceived notions blind you as you navigate through this game. \n\nAnd remember, a defendant is innocent until proven guilty.";
+
+
+String e2 = "Check your assumptions. \nHere's what actually happened... \n\nTroy Anthony Davis was an African American man convicted of and executed for the murder of police officer Mark MacPhail. \nDuring Davis's 1991 trial, 7 witnesses testified they had seen Davis fire a rifle, and 2 others testified Davis had confessed the murder to them. Later on, 7 of the 9 witnesses recanted their original accusations. Amid numerous innocence protests for Davis, he was executed on September 21, 2011, 20 years after the initial sentence. ";
+String e3 = "Check your assumptions. \nHere's what actually happened... \n\nThe judges decided that the defendant shall receive a death sentence, and was tried as an adult, found guilty of premeditated murder.";
+String e4 = "Check your assumptions. \nHere's what actually happened... \n\nAlthough no physical evidence linked them to the deaths of two white men, Lee and Pitts’ guilty pleas, the testimony of an alleged eyewitness, and incompetent defense counsel led to their convictions. \nThe 2 men were sentenced to death. Later, another man confessed to the crime, the eyewitness recanted her accusations, and the state Attorney General admitted that the state had unlawfully suppressed evidence. \nThe men were granted a new trial, but were again convicted and sentenced to death. \nThey were released in 1975 when they received a full pardon from Governor Askew, who stated he was “sufficiently convinced that they were innocent.";
+String e5 = "Check your assumptions. \nHere's what actually happened... \n\nProsecution of the 5 defendants in the case was primarily based on their confessions they had made after police interrogations. However, none had counsel during their questioning. Later, they each withdrew these confessions and pleaded not guilty. In addition, none of their DNA samples matched with Meili’s. Still, 4 of the 5 in the case were convicted of rape, assault and other charges. After the real rapist was identified in 2002, these 5 convictions were vacated. In 2003, the 5 men sued the City of New York for malicious prosecution, racial discrimination, and emotional distress. After a change in administration, the city settled in 2014 for $41 million.";
+String e6 = "Check your assumptions. \nHere's what actually happened... \n\nPost-conviction investigation found that the neighbor who was caring for Richardson’s children had a prior homicide conviction, and the defense provided affidavits from people to whom he had confessed.\nRichardson’s conviction was t7u hrown into further doubt when the governor appointed District Attorney Janet Reno to conduct a special investigation. \nShe concluded Richardson’s conviction should be vacated. \nAt a subsequent court hearing, the court overturned his conviction.";
+String e7 = "Check your assumptions. \nHere's what actually happened... \n\nWhen it was discovered that the state failed to disclose exculpatory evidence, Bloodsworth received a new trial, at which he was convicted and given a life sentence. \nHe was released after subsequent DNA testing confirmed his innocence.";
+String e8 = "Check your assumptions. \nHere's what actually happened... \n\nAfter attempts to resuscitate her son, Butler rushed to the hospital, but her son died. \nThe following day Butler was arrested for child abuse due to the bruises left by her resuscitation attempts. \nThen, in 1990, she was convicted of capital murder and sentenced to death. Her conviction was overturned by the Mississippi Supreme Court in 1992. \nThe court said that the prosecution had failed to prove that the incident was anything more than an accident. \nAt retrial, she was acquitted on Dec. 17, 1995 after a jury deliberation. It is now believed that the baby may have died either of cystic kidney disease or from sudden infant death syndrome.";
+String e9 = "Check your assumptions. \nHere's what actually happened... \n\nThe court sentenced Alcaca to death in 2010. \nThen in 2013, he received an additional sentence of 25 years to life after pleading guilty to two homicides committed in New York in 1971 and 1977. \nIt is believed that the total count of victims range from 8 to 130.";
+String e10 ="Check your assumptions. \nHere's what actually happened... \n\nThe Florida Supreme Court threw out Hayes’s conviction and the DNA evidence in 1995. \nThe victim had been found clutching hairs probably from her assailant. \nThe hairs were from a white man, whereas Hayes is black. \nHayes was acquitted at a retrial in July, 1997.";
+
+
+int i=0;
+int a = 0;
+// This is the array of values you might want to send to Arduino.
+int values[] = new int[1];
+void setup() {
+  size(1500,1000);
+  textSize(24);
+  startTime = millis();
+  typewriter = new SoundFile(this, "typewriter-1.wav");
+  radar = new SoundFile(this, "radar sound effect.mp3");
+  correct = new SoundFile(this, "correct sound effect.mp3");
+  incorrect = new SoundFile(this, "incorrect sound effect.mp3");
+  //textFont();
+  font = createFont("TravelingTypewriter.ttf", 22);
+  textFont(font);
+  text("h", 10, 50);
+
+
+  printArray(Serial.list());
+  myPort = new Serial(this, Serial.list()[2], 9600);
+  // check the list of the ports,
+  // find the port "/dev/cu.usbmodem----" or "/dev/tty.usbmodem----" 
+  // and replace PORT_INDEX above with the index of the port
+
+  myPort.clear();
+  // Throw out the first reading,
+  // in case we started reading in the middle of a string from the sender.
+  //myString = myPort.readStringUntil( 10 );  // 10 = '\n'  Linefeed in ASCII
+  //myString = null;
+}
+//boolean gameOver = false;
+void draw() {
+
+  if (myPort.available()>0) {
+    ardValue = myPort.readChar();
+    println(ardValue);
+  }
+  background(0);
+  fill(255);
+  if (!gameOver) {
+    if (!radar.isPlaying()) {
+
+      radar.play();
+    }
+    //else {
+    //  radar.stop();
+    //}
+
+
+    //question 1
+    if (question == 1) {
+      text(q1.substring(0, i), width/4, height/6, width/2, 900);
+
+      // answers[0] = true;
+
+      //}
+      if (i<q1.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+        //keyPressed();
+        if (i >= q1.length()) {
+          typewriter.stop();
+          //myPort.write('S');
+        }
+      }
+      if (ardValue == 'R') {
+        question++;
+        //myPort.write('H');
+        ardValue = '0';
+        i = 0;
+      }
+    } 
+    //question 2
+    if (question == 2) {
+      text(q2.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q2.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+        //keyPressed();
+        if (i >= q2.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis(); //copy these 2 lines
+          countdown = true;
+        }
+      }
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+     
+      if (ardValue == 'R') {
+        question++;
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        //correct.stop();
+        //add right answer sound
+        myPort.write('H');
+        ardValue = '0';
+        countdown = false;
+        i = 0;
+      } else if (ardValue == 'L' || (countdown && millis()-qTime > 10000)) { //new line!!!!!!! explanantion on screen
+        //add wrong answer sound
+        myPort.write('N');
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        i = 0;
+        gameOver = true;
+      }
+    } 
+     }
+
+    //question 3
+    if (question == 3) {
+      text(q3.substring(0, i), width/4, height/4, width/2, 900);
+
+      if (i<q3.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= q3.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+      
+      if (ardValue == 'L') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'R'|| (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i=0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+    } 
+}
+
+    //question 4
+    if (question == 4) {
+      text(q4.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q4.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= q4.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+      
+      if (ardValue == 'R') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'L'|| (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i=0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+    } 
+    }
+
+    //question 5
+    if (question == 5) {
+      text(q5.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q5.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= q5.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+     
+      if (ardValue == 'R') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'L'|| (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i=0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+    } 
+    }
+    
+    //question 6
+    if (question == 6) {
+      text(q6.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q6.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= q6.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+        text(timeLeft/1000, 100, 100);
+      
+      if (ardValue == 'L') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'R'|| (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i = 0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+    } 
+    }
+    //question 7
+    if (question == 7) {
+      text(q7.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q7.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= q7.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+  
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+      
+      if (ardValue == 'R') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'L'|| (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i = 0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+    }
+    }
+    //question 8
+    if (question == 8) {
+      text(q8.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q8.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= q8.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+      
+      if (ardValue == 'L') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'R'|| (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i = 0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+    } 
+    }
+    //question 9
+    if (question == 9) {
+      text(q9.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q9.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+        if (i >= q9.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+      
+      if (ardValue == 'L') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'R'|| (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i = 0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+    } 
+    }
+    //question 10
+    if (question == 10) {
+      text(q10.substring(0, i), width/4, height/4, width/2, 900);
+      // if (keyPressed = ) {
+      // answers[1] = true;
+      //question ++;
+
+      //}
+      if (i<q10.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= q10.length()) {
+          typewriter.stop();
+          myPort.write('S');
+          qTime = millis();
+          countdown = true;
+        }
+      }
+      if (countdown) {
+        long timeLeft = (10000 - (millis()-qTime));
+        println(timeLeft);
+        //text("0"+timeLeft/1000+":"+timeLeft/10%100,100,100);
+
+        text(timeLeft/1000, 100, 100);
+      
+      if (ardValue == 'R') {
+        question++;
+        myPort.write('H');
+        if (!correct.isPlaying()) {
+          correct.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(correct.duration())*1000);
+        }
+        ardValue = '0';
+        i = 0;
+        countdown = false;
+      } else if (ardValue == 'L' || (countdown && millis()-qTime > 10000)) {
+        myPort.write('N');
+        i = 0;
+        if (!incorrect.isPlaying()) {
+          incorrect.play();
+          radar.pause();
+          typewriter.pause();
+          //delay(int(incorrect.duration())*1000);
+        }
+        gameOver = true;
+      }
+      }
+      //println("you thought that " + ansTrue/(ansFalse+ansTrue) + " statements were true");
+      // changes the values
+      //for (int i=0; i<values.length; i++) {
+      //  values[i] = i;  /** Feel free to change this!! **/
+      //}
+
+      // sends the values to Arduino.
+      //sendSerialData();
+
+      // This causess the communication to become slow and unstable.
+      // You might want to comment this out when everything is ready.
+      // The parameter 200 is the frequency of echoing. 
+      // The higher this number, the slower the program will be
+      // but the higher this number, the more stable it will be.
+      //echoSerialData(200);
+    }//closes if statement
+  } else {
+    if (question ==2) {
+      text(e2.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e2.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e2.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    //3
+    if (question ==3) {
+      text(e3.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e3.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e3.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    //4
+    if (question ==4) {
+      text(e4.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e4.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e4.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    //5
+    if (question ==5) {
+      text(e5.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e5.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e5.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    //6
+    if (question ==6) {
+      text(e6.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e6.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e6.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    //7
+    if (question ==7) {
+      text(e7.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e7.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e7.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    //8
+    if (question ==8) {
+      text(e8.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e8.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e8.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    if (question ==9) {
+      text(e9.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e9.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e9.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+    //10
+    if (question ==10) {
+      text(e10.substring(0, i), width/4, height/4, width/2, 900);
+      if (i<e10.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+
+        if (i >= e10.length()) {
+          typewriter.stop();
+        }
+      }
+    }
+  }
+  //question 11
+    if (question == 11) {
+      text(q11.substring(0, i), width/4, height/6, width/2, 900);
+
+      // answers[0] = true;
+
+      //}
+      if (i<q11.length() && millis()-startTime >= desiredDuration) { 
+        if (!typewriter.isPlaying()) {
+          typewriter.play();
+        }
+        i++;
+        startTime = millis();
+        //keyPressed();
+        if (i >= q11.length()) {
+          typewriter.stop();
+          //myPort.write('S');
+        }
+      }
+      if (ardValue == 'R') {
+        question++;
+        //myPort.write('H');
+        ardValue = '0';
+        i = 0;
+      }
+    } 
+}//end of draw
+
+//void sendSerialData() {
+//  String data = "";
+//  for (int i=0; i<values.length; i++) {
+//    data += values[i];
+//    //if i is less than the index number of the last element in the values array
+//    if (i < values.length-1) {
+//      data += ","; // add splitter character "," between each values element
+//    } 
+//    //if it is the last element in the values array
+//    else {
+//      data += "n"; // add the end of data character "n"
+//    }
+//  }
+//  //write to Arduino
+
+//}
+
+void keyPressed() {
+  if (key==CODED) {
+    if (keyCode == LEFT) {
+      myPort.write('H');
+      question++;
+      i = 0;
+      ansTrue++;
+      //if (question == 2) {  ansTrue++; } else gameOver = true;
+      //if (question == 3) {  ansTrue++; } else gameOver = true;
+      //if (question == 4) {  ansTrue++; } else gameOver = true;
+      //if (question == 5) {  ansTrue++; } else gameOver = true;
+      //if (question == 1) {  ansTrue++; } else gameOver = true;
+      //if (question == 1) {  ansTrue++; } else gameOver = true;
+
+      println("you have selected true " +ansTrue);
+    }
+    if (keyCode == RIGHT) {
+      myPort.write('N');
+      question++;
+      i = 0;
+      ansFalse++;
+      println("you have selected false "+ ansFalse);
+    } else {
+      //name += key;
+    }
+    println(question);
+  }
+
+  ;
+  //void echoSerialData(int frequency) {
+  //  //write character 'e' at the given frequency
+  //  //to request Arduino to send back the values array
+  //  if (frameCount % frequency == 0) myPort.write('e');
+
+  //  String incomingBytes = "";
+  //  while (myPort.available() > 0) {
+  //    //add on all the characters received from the Arduino to the incomingBytes string
+  //    incomingBytes += char(myPort.read());
+  //  }
+  //  //print what Arduino sent back to Processing
+  //  print( incomingBytes );
+  //}
+
+  //https://www.sentencingproject.org/criminal-justice-facts/
+  //https://edition.cnn.com/2011/09/22/world/davis-world-reaction/index.html
+}
